@@ -38,7 +38,7 @@ namespace dotX39
 		}
 		Data* DataArray::getDataElement(unsigned int index) const
 		{
-			if (this->_data.size() >= index)
+			if (this->_data.size() <= index)
 				return NULL;
 			return this->_data[index];
 		}
