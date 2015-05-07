@@ -90,7 +90,7 @@ namespace dotX39
 					case '\r': s.append("\\r"); break;
 					case '\n': s.append("\\n"); break;
 					case '\t': s.append("\\t"); break;
-					case '\\': s.append("\\"); break;
+					case '\\': s.append("\\\\"); break;
 					case ']': s.append("\\]"); break;
 					case '[': s.append("\\["); break;
 					default: s.append(c, c + 1); break;

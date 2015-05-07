@@ -42,6 +42,10 @@ namespace dotX39
 				return NULL;
 			return this->_data[index];
 		}
+		unsigned int DataArray::getDataCount(void) const
+		{
+			return this->_data.size();
+		}
 		std::string DataArray::toString(void) const
 		{
 			std::string s = "[";
