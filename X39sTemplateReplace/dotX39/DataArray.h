@@ -30,7 +30,7 @@ namespace dotX39
 		void DataArray::setData(const void* data) { }
 		DataTypes DataArray::getType(void) const
 		{
-			return DataTypes::STRING;
+			return DataTypes::ARRAY;
 		}
 		void DataArray::addDataElement(Data* elm)
 		{
