@@ -1,6 +1,6 @@
-templates(templatePath = "templates/")
+templates(basePath = "templates\\")
 {
-	onclick(path = "baseTemplate.html")
+	onclick(path = "baseTemplate.html", fileName = "onclick", fileExtension = "html")
 	{
 		/* Keywords used inside of this templates file */
 		templateKeywords
@@ -14,24 +14,24 @@ templates(templatePath = "templates/")
 			actionText = ["{{{actionText}}}", "click me"];
 		}
 	}
-	ondblclick(path = "baseTemplate.html")
+	ondblclick(path = "baseTemplate.html", fileName = "ondblclick", fileExtension = "html")
 	{
 		/* Keywords used inside of this templates file */
-		keywordsUsed
+		templateKeywords
 		{
 			tagBaseContent = "{{{tagBaseContent}}}";
 		}
 		/* Keywords which need to be inside of the replacement text */
-		keywordsRequired
+		replacementKeywords
 		{
 			tagEvent = ["{{{tagEvent}}}", "ondblclick=\"alert('success');\""];
 			actionText = ["{{{actionText}}}", "double click me"];
 		}
 	}
 }
-replace(outputPath = "out/")
+replacements(basePath = "out\\")
 {
-	uTag(fileName = "u", fileExtension = "html", path = "u/")
+	uTag(fileName = "u", path = "u\\")
 	{
 		/* Templates used by this replace functionality */
 		templates = ["clickMe", "ondblclick"];
@@ -41,7 +41,7 @@ replace(outputPath = "out/")
 			tagBaseContent = "<u {{{tagEvent}}}>{{{actionText}}}</u>";
 		}
 	}
-	pTag(fileName = "p", fileExtension = "html", path = "p/")
+	pTag(fileName = "p", path = "p/")
 	{
 		templates = ["clickMe"];
 		keywords
