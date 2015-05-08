@@ -51,7 +51,6 @@ typedef struct strTemplate
 typedef struct strReplacement
 {
 	string name;
-	string fileName;
 	string folderPath;
 	vector<string> usedTemplates;
 	vector<TEMPLATEKEYWORD> keywords;
@@ -103,16 +102,7 @@ void parseReplacements(vector<REPLACEMENT>& replacementsFiles, const dotX39::Nod
 		for (int j = 0; j < node->getArgumentCount(); j++)
 		{
 			const dotX39::Data* arg = node->getArgument(j);
-			if (arg->getName().compare("fileName") == 0)
-			{
-				if (arg->getType() != dotX39::DataTypes::STRING)
-				{
-					cout << string("the nodes '").append(node->getName()).append("' fileName argument should be STRING") << endl;
-					exit(-1);
-				}
-				r.fileName = ((dotX39::DataString*)arg)->getDataAsString();
-			}
-			else if(arg->getName().compare("path") == 0)
+			if(arg->getName().compare("path") == 0)
 			{
 				if (arg->getType() != dotX39::DataTypes::STRING)
 				{
@@ -244,7 +234,7 @@ void parseTemplates(vector<TEMPLATE>& templateFiles, const dotX39::Node* templat
 		while (!stream.eof())
 		{
 			memset(s, 0, sizeof(s));
-			stream.read(s, 256);
+			stream.read(s, 255);
 			t.content.append(s);
 		}
 		stream.close();
@@ -344,7 +334,7 @@ void writeFile(REPLACEMENT& r, vector<TEMPLATE>& templateFiles)
 			cout << string("The TEMPLATE ").append(r.usedTemplates[i]).append(" of replacement ").append(r.name).append(" is not existing") << endl;
 			exit(-1);
 		}
-		string fileName = string().append(r.fileName).append(t->fileName).append(".").append(t->fileExtension);
+		string fileName = string(t->fileName).append(".").append(t->fileExtension);
 		REPLACEMENT rCopy = REPLACEMENT(r);
 		//Replace TemplateKeywords in the replacement
 		for (int j = 0; j < t->keywordsReplace.size(); j++)
@@ -389,7 +379,7 @@ void writeFile(REPLACEMENT& r, vector<TEMPLATE>& templateFiles)
 		}
 		if (verbose)
 			cout << "Creating file '" << fileName << "' from template '" << t->name << "'" << endl;
-		ofstream stream = ofstream(string(rCopy.folderPath).append(rCopy.fileName).append(t->fileName).append(".").append(t->fileExtension));
+		ofstream stream = ofstream(string(rCopy.folderPath).append(t->fileName).append(".").append(t->fileExtension));
 		string content = string(t->content);
 		for (int j = 0; j < t->keywordsTemplate.size(); j++)
 		{
@@ -446,7 +436,10 @@ int main(int argc, char* argv[])
 	for (int i = 2; i < argc; i++)
 	{
 		if (argv[i][0] != '-')
-			argument.append(" ").append(argv[i]);
+			if (strchr(argv[i], ' ') == NULL)
+				argument.append(" ").append(argv[i]);
+			else
+				argument.append(" \"").append(argv[i]).append("\"");
 		else
 		{
 			cmdHandler.executeCommand(argument.c_str());
@@ -543,7 +536,7 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < replacementsFiles.size(); i++)
 	{
 		if (verbose)
-			cout << endl << string(20, '-') << endl << "creating files for " << replacementsFiles[i].fileName << endl;
+			cout << endl << string(20, '-') << endl << "creating files for " << replacementsFiles[i].name << endl;
 		writeFile(replacementsFiles[i], templateFiles);
 	}
 	delete documentRoot;

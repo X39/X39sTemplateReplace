@@ -31,7 +31,7 @@ templates(basePath = "templates\\")
 }
 replacements(basePath = "out\\")
 {
-	uTag(fileName = "u", path = "u\\")
+	uTag(path = "u\\")
 	{
 		/* Templates used by this replace functionality */
 		templates = ["onclick", "ondblclick"];
@@ -41,7 +41,7 @@ replacements(basePath = "out\\")
 			tagBaseContent = "<u {{{tagEvent}}}>{{{actionText}}}</u>";
 		}
 	}
-	pTag(fileName = "p", path = "p/")
+	pTag(path = "p/")
 	{
 		templates = ["onclick"];
 		keywords
