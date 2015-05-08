@@ -18,6 +18,7 @@ using namespace std;
 #define READINGMODE_ARGUMENT_END 3
 #define READER_BUFFERSIZE 256
 #define SETREADINGMODE(MODE) setReadingMode(MODE, &readingMode, &readingMode_last)
+#define DISABLEOUTERCATCH
 namespace dotX39
 {
 	namespace DocumentReader
@@ -54,7 +55,7 @@ namespace dotX39
 			bool commentFlag = false;
 			unsigned int readingMode = READINGMODE_NAME;
 			unsigned int readingMode_last = READINGMODE_NAME;
-			unsigned long lineNumber = 0;
+			unsigned long lineNumber = 1;
 			string name;
 			string argumentName;
 			bool dataTag = false;
@@ -63,8 +64,10 @@ namespace dotX39
 			vector<Data*> argumentsData;
 			if (!doc.is_open())
 				throw exception("Cannot open file");
+#ifndef DISABLEOUTERCATCH
 			try
 			{
+#endif
 				while (!doc.eof())
 				{
 					char stringDetectionChar;
@@ -225,13 +228,13 @@ namespace dotX39
 										data.append(c, cp + 1);
 										i += strlen(c) - strlen(cp) + 1;
 										c = cp + 1;
-										while (iscntrl(c[0]) || c[0] == ' ' || c[0] == '\t')
+										while ((iscntrl(c[0]) || c[0] == ' ' || c[0] == '\t') && c[0] != '\0')
 										{
 											c = c + 1;
 											i++;
 										}
-										if ((c[0] != ';' && readingMode_last == READINGMODE_NAME) || (c[0] != ',' && c[0] != ')' && readingMode_last == READINGMODE_ARGUMENT))
-											throw exception("Unexpected character where lineTerminator should have been");
+										if (((c[0] != ';' && readingMode_last == READINGMODE_NAME) || (c[0] != ',' && c[0] != ')' && readingMode_last == READINGMODE_ARGUMENT)) && c[0] != '\0')
+											throw exception(string("Unexpected character '").append(c, c + 1).append("' where lineTerminator should have been").c_str());
 										if (readingMode_last == READINGMODE_NAME)
 										{
 											curNodeTree.back()->addData(readArray(data, name));
@@ -263,13 +266,13 @@ namespace dotX39
 										data.append(c, cp);
 										i += strlen(c) - strlen(cp);
 										c = cp;
-										while (iscntrl(c[0]) || c[0] == ' ' || c[0] == '\t')
+										while ((iscntrl(c[0]) || c[0] == ' ' || c[0] == '\t') && c[0] != '\0')
 										{
 											c = c + 1;
 											i++;
 										}
-										if ((c[0] != ';' && readingMode_last == READINGMODE_NAME) || (c[0] != ',' && c[0] != ')' && readingMode_last == READINGMODE_ARGUMENT))
-											throw exception("Unexpected character where lineTerminator should have been");
+										if (((c[0] != ';' && readingMode_last == READINGMODE_NAME) || (c[0] != ',' && c[0] != ')' && readingMode_last == READINGMODE_ARGUMENT)) && c[0] != '\0')
+											throw exception(string("Unexpected character '").append(c, c + 1).append("' where lineTerminator should have been").c_str());
 										if (readingMode_last == READINGMODE_NAME)
 										{
 											curNodeTree.back()->addData(readBoolean(data, name));
@@ -300,13 +303,13 @@ namespace dotX39
 										data.append(c, cp + 1);
 										i += strlen(c) - strlen(cp) + 1;
 										c = cp + 1;
-										while (iscntrl(c[0]) || c[0] == ' ' || c[0] == '\t')
+										while ((iscntrl(c[0]) || c[0] == ' ' || c[0] == '\t') && c[0] != '\0')
 										{
 											c = c + 1;
 											i++;
 										}
-										if ((c[0] != ';' && readingMode_last == READINGMODE_NAME) || (c[0] != ',' && c[0] != ')' && readingMode_last == READINGMODE_ARGUMENT))
-											throw exception("Unexpected character where lineTerminator should have been");
+										if (((c[0] != ';' && readingMode_last == READINGMODE_NAME) || (c[0] != ',' && c[0] != ')' && readingMode_last == READINGMODE_ARGUMENT)) && c[0] != '\0')
+											throw exception(string("Unexpected character '").append(c, c + 1).append("' where lineTerminator should have been").c_str());
 										if (readingMode_last == READINGMODE_NAME)
 										{
 											curNodeTree.back()->addData(readDateTime(data, name));
@@ -337,13 +340,13 @@ namespace dotX39
 										data.append(c, cp);
 										i += strlen(c) - strlen(cp);
 										c = cp;
-										while (iscntrl(c[0]) || c[0] == ' ' || c[0] == '\t')
+										while ((iscntrl(c[0]) || c[0] == ' ' || c[0] == '\t') && c[0] != '\0')
 										{
 											c = c + 1;
 											i++;
 										}
-										if ((c[0] != ';' && readingMode_last == READINGMODE_NAME) || (c[0] != ',' && c[0] != ')' && readingMode_last == READINGMODE_ARGUMENT))
-											throw exception("Unexpected character where lineTerminator should have been");
+										if (((c[0] != ';' && readingMode_last == READINGMODE_NAME) || (c[0] != ',' && c[0] != ')' && readingMode_last == READINGMODE_ARGUMENT)) && c[0] != '\0')
+											throw exception(string("Unexpected character '").append(c, c + 1).append("' where lineTerminator should have been").c_str());
 										if (readingMode_last == READINGMODE_NAME)
 										{
 											curNodeTree.back()->addData(readScalar(data, name));
@@ -369,10 +372,13 @@ namespace dotX39
 								{
 									char* cp;
 									char* cp2;
-									char* cp3 = c + 1;
+									char* cp3 = c;
 									int j = 0;
 									if (data.empty())
+									{
 										stringDetectionChar = c[0];
+										cp3++;
+									}
 									while (true)
 									{
 										cp = strchr(cp3, stringDetectionChar);
@@ -389,13 +395,13 @@ namespace dotX39
 										data.append(c, cp + 1);
 										i += strlen(c) - strlen(cp);
 										c = cp + 1;
-										while (iscntrl(c[0]) || c[0] == ' ' || c[0] == '\t')
+										while ((iscntrl(c[0]) || c[0] == ' ' || c[0] == '\t') && c[0] != '\0')
 										{
 											c++;
 											i++;
 										}
-										if ((c[0] != ';' && readingMode_last == READINGMODE_NAME) || (c[0] != ',' && c[0] != ')' && readingMode_last == READINGMODE_ARGUMENT))
-											throw exception("Unexpected character where lineTerminator should have been");
+										if (((c[0] != ';' && readingMode_last == READINGMODE_NAME) || (c[0] != ',' && c[0] != ')' && readingMode_last == READINGMODE_ARGUMENT)) && c[0] != '\0')
+											throw exception(string("Unexpected character '").append(c, c + 1).append("' where lineTerminator should have been").c_str());
 										if (readingMode_last == READINGMODE_NAME)
 										{
 											curNodeTree.back()->addData(readString(data, name));
@@ -470,11 +476,13 @@ namespace dotX39
 #pragma endregion
 					}
 				}
+#ifndef DISABLEOUTERCATCH
 			}
 			catch (exception e)
 			{
 				throw new exception(string("Exception '").append(e.what()).append("' on line ").append(to_string(lineNumber)).c_str());
 			}
+#endif
 			if (readingMode != READINGMODE_NAME)
 				throw exception("Reached EOF before all parsing operations ended");
 			if (curNodeTree.size() != 1)
@@ -592,66 +600,66 @@ namespace dotX39
 							work.clear();
 						break;
 					case '"': case '\'':
+					{
+						auto cp = work.c_str() + 1;
+						auto j = 0;
+						auto index = 1;
+						auto controlChar = work[0];
+						while (cp[0] != '\0')
 						{
-							auto cp = work.c_str() + 1;
-							auto j = 0;
-							auto index = 1;
-							auto controlChar = work[0];
-							while (cp[0] != '\0')
-							{
-								if ((cp[0] == controlChar) && j % 2 != 1)
-									break;
-								if (cp[0] == '\\')
-									j++;
-								else
-									j = 0;
-								cp++;
-								index++;
-							}
-							d = readString(work.substr(0, index + 1), "");
-							p = work.find_first_of(",");
-							if (p != string::npos)
-								work.erase(work.begin(), work.begin() + p);
+							if ((cp[0] == controlChar) && j % 2 != 1)
+								break;
+							if (cp[0] == '\\')
+								j++;
 							else
-								work.clear();
+								j = 0;
+							cp++;
+							index++;
 						}
-						break;
+						d = readString(work.substr(0, index + 1), "");
+						p = work.find_first_of(",");
+						if (p != string::npos)
+							work.erase(work.begin(), work.begin() + p);
+						else
+							work.clear();
+					}
+					break;
 					case '[':
+					{
+						auto cp = work.c_str() + 1;
+						auto j = 0;
+						auto index = 1;
+						auto arrayCounter = 1;
+						while (cp[0] != '\0')
 						{
-							auto cp = work.c_str() + 1;
-							auto j = 0;
-							auto index = 1;
-							auto arrayCounter = 1;
-							while (cp[0] != '\0')
+							if (cp[0] == '[' || cp[0] == ']')
 							{
-								if (cp[0] == '[' || cp[0] == ']')
+								if (j % 2 != 1)
 								{
-									if (j % 2 != 1)
-									{
-										if (cp[0] == '[')
-											arrayCounter++;
-										else
-											arrayCounter--;
-										if (arrayCounter == 0)
-											break;
-									}
+									if (cp[0] == '[')
+										arrayCounter++;
+									else
+										arrayCounter--;
+									if (arrayCounter == 0)
+										break;
 								}
-								if (cp[0] == '\\')
-									j++;
-								else
-									j = 0;
-								cp++;
-								index++;
 							}
-							d = readArray(work.substr(0, index + 1), "");
-							work.erase(work.begin(), work.begin() + index + 1);
-							p = work.find_first_of(",");
-							if (p != string::npos)
-								work.erase(work.begin(), work.begin() + p);
+							if (cp[0] == '\\')
+								j++;
 							else
-								work.clear();
+								j = 0;
+							cp++;
+							index++;
 						}
-						break;
+						d = readArray(work.substr(0, index + 1), "");
+						work.erase(work.begin(), work.begin() + index + 1);
+						p = work.find_first_of(",");
+						if (p != string::npos)
+							work.erase(work.begin(), work.begin() + p);
+						else
+							work.clear();
+					}
+					break;
 					case 't': case 'T': case 'f': case 'F':
 						d = readBoolean(work.substr(0, work.find_first_of(",")), "");
 						p = work.find_first_of(",");
@@ -666,7 +674,7 @@ namespace dotX39
 					default:
 						throw exception(string("Invalid Arguments, Provided string contains invalid syntax for array! Rest of the string: ").append(work).c_str());
 					}
-					if(d != NULL)
+					if (d != NULL)
 						dataArray->addDataElement(d);
 				}
 			}
