@@ -11,7 +11,7 @@ templates(basePath = "templates\\")
 		replacementKeywords
 		{
 			tagEvent = ["{{{tagEvent}}}", "onclick=\"alert('success');\""];
-			actionText = ["{{{actionText}}}", "click me"];
+			actionText = ["{{{actionText}}}", "click meclick meclick meclick meclick meclick meclick meclick me"];
 		}
 	}
 	ondblclick(path = "baseTemplate.html", fileName = "ondblclick", fileExtension = "html")
@@ -34,7 +34,7 @@ replacements(basePath = "out\\")
 	uTag(fileName = "u", path = "u\\")
 	{
 		/* Templates used by this replace functionality */
-		templates = ["clickMe", "ondblclick"];
+		templates = ["onclick", "ondblclick"];
 		/* Template keyword text which will be inserted into the template */
 		keywords
 		{
@@ -43,7 +43,7 @@ replacements(basePath = "out\\")
 	}
 	pTag(fileName = "p", path = "p/")
 	{
-		templates = ["clickMe"];
+		templates = ["onclick"];
 		keywords
 		{
 			tagBaseContent = "<p {{{tagEvent}}}>{{{actionText}}}</p>";
