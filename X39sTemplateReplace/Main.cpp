@@ -462,8 +462,16 @@ int main(int argc, char* argv[])
 	if (verbose)
 		cout << "Reading project document file" << endl;
 	dotX39::Node* documentRoot = new dotX39::Node("root");
-	dotX39::DocumentReader::readDocument(string().append(basePath).append(projectFileName), documentRoot);
-
+	try
+	{
+		dotX39::DocumentReader::readDocument(string().append(basePath).append(projectFileName), documentRoot);
+	}
+	catch (exception e)
+	{
+		cout << "Ran into problems while reading the project file :(" << endl;
+		cout << e.what() << endl;
+		exit(-1);
+	}
 	//Gather important informations about the 2 base nodes
 	for (int i = 0; i < documentRoot->getNodeCount(); i++)
 	{
