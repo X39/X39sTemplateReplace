@@ -48,7 +48,7 @@ typedef struct strTemplate
 } TEMPLATE;
 
 /** Basic structure representing a Template */
-typedef struct strTemplate
+typedef struct strReplacement
 {
 	string name;
 	string fileName;
@@ -160,7 +160,7 @@ void parseReplacements(vector<REPLACEMENT>& replacementsFiles, const dotX39::Nod
 			const dotX39::Node* nodeNode = node->getNode(j);
 			if (nodeNode->getName().compare("keywords") == 0)
 			{
-				for (int k = 0; k < ((dotX39::DataArray*)nodeNode)->getDataCount(); k++)
+				for (int k = 0; k < nodeNode->getDataCount(); k++)
 				{
 					const dotX39::Data* keyword = nodeNode->getData(k);
 					if (keyword->getType() != dotX39::DataTypes::STRING)
@@ -180,6 +180,7 @@ void parseReplacements(vector<REPLACEMENT>& replacementsFiles, const dotX39::Nod
 					cout << string("the node '").append(node->getName()).append("' contains the unknown node '").append(nodeNode->getName()).append("'") << endl;
 			}
 		}
+		replacementsFiles.push_back(r);
 	}
 }
 void parseTemplates(vector<TEMPLATE>& templateFiles, const dotX39::Node* templates, string templateBasePath)
@@ -246,6 +247,7 @@ void parseTemplates(vector<TEMPLATE>& templateFiles, const dotX39::Node* templat
 			stream.read(s, 256);
 			t.content.append(s);
 		}
+		stream.close();
 		//Load the different keyword combinations into the TEMPLATE structure
 		for (int j = 0; j < node->getNodeCount(); j++)
 		{
@@ -302,7 +304,14 @@ void parseTemplates(vector<TEMPLATE>& templateFiles, const dotX39::Node* templat
 int createDirectory(string path)
 {
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-	return createDirectory(converter.from_bytes(path));
+	wstring wStringPath = converter.from_bytes(path);
+	auto result = CreateDirectory(wStringPath.c_str(), NULL);
+	if (result == ERROR_PATH_NOT_FOUND)
+	{
+		createDirectory(path.substr(0, path.rfind('\\')));
+		return createDirectory(path);
+	}
+	return result;
 }
 int createDirectory(wstring path)
 {
@@ -336,10 +345,79 @@ void writeFile(REPLACEMENT& r, vector<TEMPLATE>& templateFiles)
 			exit(-1);
 		}
 		string fileName = string().append(r.fileName).append(t->fileName).append(".").append(t->fileExtension);
+		REPLACEMENT rCopy = REPLACEMENT(r);
+		//Replace TemplateKeywords in the replacement
+		for (int j = 0; j < t->keywordsReplace.size(); j++)
+		{
+			REPLACEMENTKEYWORD* rk = &t->keywordsReplace[j];
+			bool flag = false;
+			for (int k = 0; k < rCopy.keywords.size(); k++)
+			{
+				TEMPLATEKEYWORD* tk = &rCopy.keywords[k];
+				int findResult = tk->text.find(rk->keywordAppeariance);
+				if (findResult != -1)
+				{
+					//Insert replacement
+					tk->text = string(tk->text.substr(0, findResult)).append(rk->keywordReplacement).append(tk->text.substr(findResult + rk->keywordAppeariance.length()));
+					flag = true;
+				}
+			}
+			if (!flag && verbose)
+			{
+				cout << "The ReplacementKeyword '" << rk->name << "' is unused for " << r.name << endl;
+			}
+		}
+		//Make sure ALL keywords the template requires are set and exit if not all are set proper
+		for (int j = 0; j < t->keywordsTemplate.size(); j++)
+		{
+			TEMPLATEKEYWORD* tk = &t->keywordsTemplate[j];
+			bool flag = false;
+			for (int k = 0; k < rCopy.keywords.size(); k++)
+			{
+				TEMPLATEKEYWORD* tk = &rCopy.keywords[k];
+				if (tk->name.compare(tk->name) == 0)
+				{
+					flag = true;
+					break;
+				}
+			}
+			if (!flag)
+			{
+				cout << "The TemplateKeyword '" << tk->name << "' was not set for " << r.name << endl;
+				exit(-1);
+			}
+		}
 		if (verbose)
 			cout << "Creating file '" << fileName << "' from template '" << t->name << "'" << endl;
-		//ToDo:	Continue coding here
-		//		Write out replaced file
+		ofstream stream = ofstream(string(rCopy.folderPath).append(rCopy.fileName).append(t->fileName).append(".").append(t->fileExtension));
+		string content = string(t->content);
+		for (int j = 0; j < t->keywordsTemplate.size(); j++)
+		{
+			TEMPLATEKEYWORD* templateKeyword = &t->keywordsTemplate[j];
+			for (int k = 0; k < rCopy.keywords.size(); k++)
+			{
+				TEMPLATEKEYWORD* replacementKeyword = &rCopy.keywords[k];
+				if (replacementKeyword->name.compare(templateKeyword->name) == 0)
+				{
+					int findResult = content.find(templateKeyword->text);
+					if (findResult == -1)
+					{
+						if (verbose)
+							cout << "Template " << t->name << " has the unused keyword '" << templateKeyword->name << "'" << endl;
+					}
+					else
+					{
+						do {
+							//Insert replacement
+							content = string(content.substr(0, findResult)).append(replacementKeyword->text).append(content.substr(findResult + templateKeyword->text.length()));
+						} while ((findResult = content.find(templateKeyword->text)) != -1);
+					}
+					break;
+				}
+			}
+		}
+		stream.write(content.c_str(), content.size());
+		stream.close();
 	}
 }
 int main(int argc, char* argv[])
@@ -412,7 +490,7 @@ int main(int argc, char* argv[])
 				}
 			}
 		}
-		else if (node->getName().compare("replace") == 0)
+		else if (node->getName().compare("replacements") == 0)
 		{
 			replacements = node;
 			for (int j = 0; j < node->getArgumentCount(); j++)
@@ -441,8 +519,18 @@ int main(int argc, char* argv[])
 	}
 
 	//Create Replacement Structures
+	if (templates == NULL)
+	{
+		cout << "Was unable to find the 'templates' node" << endl;
+		exit(-1);
+	}
 	parseTemplates(templateFiles, templates, templateBasePath);
 	//Create Replacement Structures
+	if (replacements == NULL)
+	{
+		cout << "Was unable to find the 'replacements' node" << endl;
+		exit(-1);
+	}
 	parseReplacements(replacementsFiles, replacements, replacementsBasePath);
 	for (int i = 0; i < replacementsFiles.size(); i++)
 	{
