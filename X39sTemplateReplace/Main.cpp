@@ -9,6 +9,7 @@
 #include <locale>
 #include <codecvt>
 #include <Windows.h>
+#include <sys/stat.h>
 
 #ifdef _DEBUG
 #define exit(FOO) system("pause"); exit(FOO);
@@ -68,6 +69,30 @@ int cmdHelp(const std::string args[], const int argCount, CommandHandler* cmdHan
 	}
 	return CH_ERROR_OK;
 }
+int cmdAbout(const std::string args[], const int argCount, CommandHandler* cmdHandler)
+{
+	cout << "About X39s Template-Replace (short: XTR)" << endl
+		<< "\tXTR was developed by X39 (or without nickname: Marco Silipo)." << endl << endl
+		<< "\tIt is 100% allowed to be used by open-source projects or" << endl << "\tcompanies (as long as the company is planning to use whatever was" << endl << "\tgenerated with this tool just internally)" << endl << endl
+		<< "\tSpecial note for companies:" << endl
+		<< "\tIf you plan to release whatever you generate with this" << endl
+		<< "\tplease contact me before so its possible to make sure" << endl
+		<< "\tyou dont violate that rule" << endl
+		<< "\tWhen you plan to make profit with this we also can find" << endl
+		<< "\ta solution ( just ask kindly :) )" << endl
+		<< "\tGreets X39" << endl;
+	return CH_ERROR_OK;
+}
+int cmdVersion(const std::string args[], const int argCount, CommandHandler* cmdHandler)
+{
+	cout
+		<< "Version: 1.0.0-RC1"
+#ifdef _DEBUG
+		<< " DEBUG VERSION"
+#endif
+		<< endl;
+	return CH_ERROR_OK;
+}
 int cmdPath(const std::string args[], const int argCount, CommandHandler* cmdHandler)
 {
 	if (argCount != 1)
@@ -80,6 +105,14 @@ int cmdPath(const std::string args[], const int argCount, CommandHandler* cmdHan
 		pathSplitter = '\\';
 	basePath = args[0].substr(0, args[0].rfind(pathSplitter) + 1);
 	projectFileName = args[0].substr(args[0].rfind(pathSplitter) + 1);
+	struct stat buffer;
+	if (stat(string(basePath).append(projectFileName).c_str(), &buffer) != 0)
+	{
+		cout << "The file '" << basePath << projectFileName << "' is not existing, make sure you provide the absolut path or just the file name (when its in executable dir)" << endl;
+		basePath = "";
+		projectFileName = "";
+		return CH_ERROR_INVALIDINPUT;
+	}
 	cout << "Path set" << endl;
 	return CH_ERROR_OK;
 }
@@ -426,7 +459,9 @@ int main(int argc, char* argv[])
 	
 	cmdHandler.registerCommand(COMMAND(cmdHelp, "?", "Outputs an overview of available commands", false));
 	cmdHandler.registerCommand(COMMAND(cmdPath, "path", "Input argument that has to point to a project.x39 file", true));
-	cmdHandler.registerCommand(COMMAND(cmdVerbose, "v", "Enables extended output", false));
+	cmdHandler.registerCommand(COMMAND(cmdVerbose, "verbose", "Enables extended output", false));
+	cmdHandler.registerCommand(COMMAND(cmdAbout, "about", "Prints informations about the author and 'license'", false));
+	cmdHandler.registerCommand(COMMAND(cmdVersion, "version", "Prints current version number", false));
 	if (argc == 1)
 	{
 		cout << "No Arguments provided, use -? for a basic help page" << endl;
@@ -447,9 +482,10 @@ int main(int argc, char* argv[])
 		}
 	}
 	cmdHandler.executeCommand(argument.c_str());
-	if (basePath.empty() || projectFileName.empty())
+	if (basePath.empty() && projectFileName.empty())
 	{
-		cout << "No path given, please provide a path argument" << endl;
+		if (verbose)
+			cout << "No path given, please provide a path argument" << endl;
 		exit(-1);
 	}
 	if (verbose)
@@ -533,12 +569,17 @@ int main(int argc, char* argv[])
 		exit(-1);
 	}
 	parseReplacements(replacementsFiles, replacements, replacementsBasePath);
+	delete documentRoot;
 	for (int i = 0; i < replacementsFiles.size(); i++)
 	{
 		if (verbose)
-			cout << endl << string(20, '-') << endl << "creating files for " << replacementsFiles[i].name << endl;
+			cout << endl << string(20, '-') << endl << "Creating files for " << replacementsFiles[i].name << endl;
+		else
+			cout << "Creating files for " << replacementsFiles[i].name << endl;
 		writeFile(replacementsFiles[i], templateFiles);
+		if (verbose)
+			cout << string(20, '-') << endl;
 	}
-	delete documentRoot;
+	cout << "---DONE---" << endl;
 	exit(1);
 }
