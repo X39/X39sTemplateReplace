@@ -29,12 +29,17 @@ templates(basePath = "templates\\")
 		}
 	}
 }
+ressources(basePath = "res\\")
+{
+	mustache(path = "mustache.png", outname = "mustache.png");
+}
 replacements(basePath = "out\\")
 {
 	uTag(path = "u\\")
 	{
 		/* Templates used by this replace functionality */
 		templates = ["onclick", "ondblclick"];
+		ressources = ["mustache"];
 		/* Template keyword text which will be inserted into the template */
 		keywords
 		{

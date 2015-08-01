@@ -36,6 +36,12 @@ typedef struct strReplacementKeyword
 	string keywordAppeariance;
 	string keywordReplacement;
 } REPLACEMENTKEYWORD;
+typedef struct strRessource
+{
+	string name;
+	string filePath;
+	string outname;
+} RESSOURCE;
 /** Basic structure representing a Template */
 typedef struct strTemplate
 {
@@ -54,6 +60,7 @@ typedef struct strReplacement
 	string name;
 	string folderPath;
 	vector<string> usedTemplates;
+	vector<string> usedRessources;
 	vector<TEMPLATEKEYWORD> keywords;
 } REPLACEMENT;
 
@@ -135,7 +142,7 @@ void parseReplacements(vector<REPLACEMENT>& replacementsFiles, const dotX39::Nod
 		for (int j = 0; j < node->getArgumentCount(); j++)
 		{
 			const dotX39::Data* arg = node->getArgument(j);
-			if(arg->getName().compare("path") == 0)
+			if (arg->getName().compare("path") == 0)
 			{
 				if (arg->getType() != dotX39::DataTypes::STRING)
 				{
@@ -172,10 +179,29 @@ void parseReplacements(vector<REPLACEMENT>& replacementsFiles, const dotX39::Nod
 					r.usedTemplates.push_back(((dotX39::DataString*)arrayData)->getDataAsString());
 				}
 			}
+			else if (data->getName().compare("ressources") == 0)
+			{
+				if (data->getType() != dotX39::DataTypes::ARRAY)
+				{
+					cout << string("the nodes '").append(node->getName()).append("' ressources argument should be an ARRAY of strings") << endl;
+					exit(-1);
+				}
+				//Read the templates array and put it into the structure
+				for (int k = 0; k < ((dotX39::DataArray*)data)->getDataCount(); k++)
+				{
+					const dotX39::Data* arrayData = ((dotX39::DataArray*)data)->getDataElement(k);
+					if (arrayData->getType() != dotX39::DataTypes::STRING)
+					{
+						cout << string("the nodes '").append(node->getName()).append("' ressources data contains non-string entries") << endl;
+						exit(-1);
+					}
+					r.usedRessources.push_back(((dotX39::DataString*)arrayData)->getDataAsString());
+				}
+			}
 			else
 			{
 				if (verbose)
-					cout << string("the node '").append(node->getName()).append("' contains the unknown data '").append(data->getName()).append("'") << endl;
+					cout << string("the node '").append(node->getName()).append("' contains the unknown data '").append(data->getName()).append("', ignored.") << endl;
 			}
 		}
 		for (int j = 0; j < node->getNodeCount(); j++)
@@ -324,6 +350,45 @@ void parseTemplates(vector<TEMPLATE>& templateFiles, const dotX39::Node* templat
 		templateFiles.push_back(t);
 	}
 }
+void parseRessources(vector<RESSOURCE>& ressourceFiles, const dotX39::Node* ressources, string ressourceBasePath)
+{
+	//Create Template structures
+	for (int i = 0; i < ressources->getNodeCount(); i++)
+	{
+		const dotX39::Node* node = ressources->getNode(i);
+		RESSOURCE r;
+		r.name = node->getName();
+		//Read the templates arguments into the TEMPLATE structure
+		for (int j = 0; j < node->getArgumentCount(); j++)
+		{
+			const dotX39::Data* arg = node->getArgument(j);
+			if (arg->getName().compare("path") == 0)
+			{
+				if (arg->getType() != dotX39::DataTypes::STRING)
+				{
+					cout << string("the nodes '").append(node->getName()).append("' path argument should be STRING") << endl;
+					exit(-1);
+				}
+				r.filePath = std::string(ressourceBasePath).append(((dotX39::DataString*)arg)->getDataAsString());
+			}
+			else if (arg->getName().compare("outname") == 0)
+			{
+				if (arg->getType() != dotX39::DataTypes::STRING)
+				{
+					cout << string("the nodes '").append(node->getName()).append("' outname argument should be STRING") << endl;
+					exit(-1);
+				}
+				r.outname = ((dotX39::DataString*)arg)->getDataAsString();
+			}
+			else
+			{
+				if (verbose)
+					cout << string("the node '").append(node->getName()).append("' contains the unknown argument '").append(arg->getName()).append("', ignored.") << endl;
+			}
+		}
+		ressourceFiles.push_back(r);
+	}
+}
 int createDirectory(string path)
 {
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
@@ -346,11 +411,29 @@ int createDirectory(wstring path)
 	}
 	return result;
 }
-void writeFile(REPLACEMENT& r, vector<TEMPLATE>& templateFiles)
+void writeFile(REPLACEMENT& r, vector<TEMPLATE>& templateFiles, vector<RESSOURCE>& ressources)
 {
 	if (verbose)
 		cout << "Creating directory " << r.folderPath << "' if it not exists" << endl;
 	createDirectory(r.folderPath);
+	for (int i = 0; i < r.usedRessources.size(); i++)
+	{
+		RESSOURCE* res = NULL;
+		for (int j = 0; j < templateFiles.size(); j++)
+		{
+			if (ressources[j].name.compare(r.usedRessources[i]) == 0)
+			{
+				res = &ressources[j];
+				break;
+			}
+		}
+		if (res == NULL)
+		{
+			cout << string("The RESSOURCE ").append(r.usedRessources[i]).append(" of replacement ").append(r.name).append(" is not existing") << endl;
+			exit(-1);
+		}
+		CopyFileA(res->filePath.c_str(), std::string(r.folderPath).append(res->outname).c_str(), false);
+	}
 	for (int i = 0; i < r.usedTemplates.size(); i++)
 	{
 		TEMPLATE* t = NULL;
@@ -452,11 +535,14 @@ int main(int argc, char* argv[])
 	string templateBasePath = "";
 	const dotX39::Node* replacements = NULL;
 	string replacementsBasePath = "";
+	const dotX39::Node* ressources = NULL;
+	string ressourcesBasePath = "";
 	vector<TEMPLATE> templateFiles = vector<TEMPLATE>();
+	vector<RESSOURCE> ressourceFiles = vector<RESSOURCE>();
 	vector<REPLACEMENT> replacementsFiles = vector<REPLACEMENT>();
 	CommandHandler cmdHandler = CommandHandler('-');
 	string argument;
-	
+
 	cmdHandler.registerCommand(COMMAND(cmdHelp, "?", "Outputs an overview of available commands", false));
 	cmdHandler.registerCommand(COMMAND(cmdPath, "path", "Input argument that has to point to a project.x39 file", true));
 	cmdHandler.registerCommand(COMMAND(cmdVerbose, "verbose", "Enables extended output", false));
@@ -523,7 +609,28 @@ int main(int argc, char* argv[])
 				else
 				{
 					if (verbose)
-						cout << string("the node '").append(node->getName()).append("' contains the unknown argument '").append(arg->getName()).append("'") << endl;
+						cout << string("the node '").append(node->getName()).append("' contains the unknown argument '").append(arg->getName()).append("', ignored.") << endl;
+				}
+			}
+		}
+		else if (node->getName().compare("ressources") == 0)
+		{
+			ressources = node;
+			for (int j = 0; j < node->getArgumentCount(); j++)
+			{
+				const dotX39::Data* arg = node->getArgument(j);
+				if (arg->getName().compare("basePath") == 0)
+				{
+					if (arg->getType() != dotX39::DataTypes::STRING)
+					{
+						exit(-1);
+					}
+					ressourcesBasePath = string().append(basePath).append(((dotX39::DataString*)arg)->getDataAsString());
+				}
+				else
+				{
+					if (verbose)
+						cout << string("the node '").append(node->getName()).append("' contains the unknown argument '").append(arg->getName()).append("', ignored.") << endl;
 				}
 			}
 		}
@@ -544,7 +651,7 @@ int main(int argc, char* argv[])
 				else
 				{
 					if (verbose)
-						cout << string("the node '").append(node->getName()).append("' contains the unknown argument '").append(arg->getName()).append("'") << endl;
+						cout << string("the node '").append(node->getName()).append("' contains the unknown argument '").append(arg->getName()).append("', ignored.") << endl;
 				}
 			}
 		}
@@ -555,6 +662,11 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	//Create Ressources Structures
+	if (ressources != NULL)
+	{
+		parseRessources(ressourceFiles, ressources, ressourcesBasePath);
+	}
 	//Create Replacement Structures
 	if (templates == NULL)
 	{
@@ -576,7 +688,7 @@ int main(int argc, char* argv[])
 			cout << endl << string(20, '-') << endl << "Creating files for " << replacementsFiles[i].name << endl;
 		else
 			cout << "Creating files for " << replacementsFiles[i].name << endl;
-		writeFile(replacementsFiles[i], templateFiles);
+		writeFile(replacementsFiles[i], templateFiles, ressourceFiles);
 		if (verbose)
 			cout << string(20, '-') << endl;
 	}
