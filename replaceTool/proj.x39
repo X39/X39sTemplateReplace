@@ -16,6 +16,7 @@ templates(basePath = "templates\\")
 	}
 	ondblclick(path = "baseTemplate.html", fileName = "ondblclick", fileExtension = "html")
 	{
+		ressources = ["mustache2"];
 		/* Keywords used inside of this templates file */
 		templateKeywords
 		{
@@ -32,6 +33,7 @@ templates(basePath = "templates\\")
 ressources(basePath = "res\\")
 {
 	mustache(path = "mustache.png", outname = "mustache.png");
+	mustache2(path = "mustache.png", outname = "mustache2.png");
 }
 replacements(basePath = "out\\")
 {

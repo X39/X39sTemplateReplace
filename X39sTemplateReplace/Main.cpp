@@ -50,6 +50,7 @@ typedef struct strTemplate
 	string content;
 	string fileExtension;
 	string filePath;
+	vector<string> usedRessources;
 	vector<TEMPLATEKEYWORD> keywordsTemplate;
 	vector<REPLACEMENTKEYWORD> keywordsReplace;
 } TEMPLATE;
@@ -297,6 +298,34 @@ void parseTemplates(vector<TEMPLATE>& templateFiles, const dotX39::Node* templat
 			t.content.append(s);
 		}
 		stream.close();
+		for (int j = 0; j < node->getDataCount(); j++)
+		{
+			const dotX39::Data* data = node->getData(j);
+			if (data->getName().compare("ressources") == 0)
+			{
+				if (data->getType() != dotX39::DataTypes::ARRAY)
+				{
+					cout << string("the nodes '").append(node->getName()).append("' ressources argument should be an ARRAY of strings") << endl;
+					exit(-1);
+				}
+				//Read the templates array and put it into the structure
+				for (int k = 0; k < ((dotX39::DataArray*)data)->getDataCount(); k++)
+				{
+					const dotX39::Data* arrayData = ((dotX39::DataArray*)data)->getDataElement(k);
+					if (arrayData->getType() != dotX39::DataTypes::STRING)
+					{
+						cout << string("the nodes '").append(node->getName()).append("' ressources data contains non-string entries") << endl;
+						exit(-1);
+					}
+					t.usedRessources.push_back(((dotX39::DataString*)arrayData)->getDataAsString());
+				}
+			}
+			else
+			{
+				if (verbose)
+					cout << string("the node '").append(node->getName()).append("' contains the unknown data '").append(data->getName()).append("', ignored.") << endl;
+			}
+		}
 		//Load the different keyword combinations into the TEMPLATE structure
 		for (int j = 0; j < node->getNodeCount(); j++)
 		{
@@ -411,29 +440,31 @@ int createDirectory(wstring path)
 	}
 	return result;
 }
+void writeRessource(vector<RESSOURCE>& ressources, string ressourceName, string outfolder)
+{
+	RESSOURCE* res = NULL;
+	for (int j = 0; j < ressources.size(); j++)
+	{
+		if (ressources[j].name.compare(ressourceName) == 0)
+		{
+			res = &ressources[j];
+			break;
+		}
+	}
+	if (res == NULL)
+	{
+		cout << string("The RESSOURCE ").append(ressourceName).append(" is not existing") << endl;
+		exit(-1);
+	}
+	CopyFileA(res->filePath.c_str(), std::string(outfolder).append(res->outname).c_str(), false);
+}
 void writeFile(REPLACEMENT& r, vector<TEMPLATE>& templateFiles, vector<RESSOURCE>& ressources)
 {
 	if (verbose)
 		cout << "Creating directory " << r.folderPath << "' if it not exists" << endl;
 	createDirectory(r.folderPath);
 	for (int i = 0; i < r.usedRessources.size(); i++)
-	{
-		RESSOURCE* res = NULL;
-		for (int j = 0; j < templateFiles.size(); j++)
-		{
-			if (ressources[j].name.compare(r.usedRessources[i]) == 0)
-			{
-				res = &ressources[j];
-				break;
-			}
-		}
-		if (res == NULL)
-		{
-			cout << string("The RESSOURCE ").append(r.usedRessources[i]).append(" of replacement ").append(r.name).append(" is not existing") << endl;
-			exit(-1);
-		}
-		CopyFileA(res->filePath.c_str(), std::string(r.folderPath).append(res->outname).c_str(), false);
-	}
+		writeRessource(ressources, r.usedRessources[i], r.folderPath);
 	for (int i = 0; i < r.usedTemplates.size(); i++)
 	{
 		TEMPLATE* t = NULL;
@@ -450,6 +481,8 @@ void writeFile(REPLACEMENT& r, vector<TEMPLATE>& templateFiles, vector<RESSOURCE
 			cout << string("The TEMPLATE ").append(r.usedTemplates[i]).append(" of replacement ").append(r.name).append(" is not existing") << endl;
 			exit(-1);
 		}
+		for (int i = 0; i < t->usedRessources.size(); i++)
+			writeRessource(ressources, t->usedRessources[i], r.folderPath);
 		string fileName = string(t->fileName).append(".").append(t->fileExtension);
 		REPLACEMENT rCopy = REPLACEMENT(r);
 		//Replace TemplateKeywords in the replacement
