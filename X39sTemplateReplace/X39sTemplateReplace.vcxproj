@@ -82,6 +82,7 @@
     <ClCompile Include="dotX39\DocumentReader.cpp" />
     <ClCompile Include="dotX39\DocumentWriter.cpp" />
     <ClCompile Include="dotX39\Node.cpp" />
+    <ClCompile Include="Entry.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -96,6 +97,13 @@
     <ClInclude Include="dotX39\DocumentWriter.h" />
     <ClInclude Include="dotX39\Node.h" />
     <ClInclude Include="dotX39\visualStudioDefines.h" />
+    <ClInclude Include="Exceptions\InvalidTypeStructure.h" />
+    <ClInclude Include="global.hpp" />
+    <ClInclude Include="XTR\Replacement.hpp" />
+    <ClInclude Include="XTR\Template.hpp" />
+    <ClInclude Include="XTR\ReplacementKeyword.hpp" />
+    <ClInclude Include="XTR\Ressource.hpp" />
+    <ClInclude Include="XTR\TemplateKeyword.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
