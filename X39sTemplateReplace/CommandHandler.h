@@ -3,20 +3,15 @@
 #include <string>
 #include <math.h>
 
-#define CH_ERROR_OK 1
-#define CH_ERROR_COMMANDNOTFOUND -1
-#define CH_ERROR_MISSINGARGUMENTS -2
-#define CH_ERROR_INVALIDINPUT -3
-
 class CommandHandler;
 
 typedef struct Command
 {
-	int (*function)(const std::string args[], const int argCount, CommandHandler* cmdHandler);
+	void(*function)(const std::vector<std::string>& args, const CommandHandler& cmdHandler);
 	std::string functionName;
 	std::string description;
 	bool hasArguments;
-	Command(int (*f)(const std::string args[], const int argCount, CommandHandler* cmdHandler) = NULL, std::string fn = "", std::string desc = "", bool b = false): function(f), functionName(fn), description(desc), hasArguments(b) {}
+	Command(void(*f)(const std::vector<std::string>& args, const CommandHandler& cmdHandler) = NULL, std::string fn = "", std::string desc = "", bool b = false) : function(f), functionName(fn), description(desc), hasArguments(b) {}
 } COMMAND;
 
 class CommandHandler {
@@ -31,13 +26,16 @@ public:
 	~CommandHandler();
 
 	int registerCommand(COMMAND cmd);
-	bool isCommand(char* str);
-	COMMAND* parseCommand(const char* str);
-	int executeCommand(COMMAND* cmd, const char* str);
-	int executeCommand(const char* str);
+	bool isCommand(char* str) const;
+	const COMMAND& parseCommand(const char* str) const;
+	inline void executeCommand(const char* str) const
+	{
+		return executeCommand(parseCommand(str), str);
+	}
+	void executeCommand(const COMMAND& cmd, const char* str) const;
 	static double convAsciiCharToDouble(const char* s, const double fallback);
 	static bool convAsciiCharToDouble(const char* s, double* out);
-	const COMMAND* getCommands();
-	const COMMAND getCommand(int index);
-	const int getCommandCount();
+	const std::vector<COMMAND>& getCommands() const;
+	const COMMAND& getCommand(int index) const;
+	int getCommandCount() const;
 };
