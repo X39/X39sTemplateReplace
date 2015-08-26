@@ -83,7 +83,6 @@
     <ClCompile Include="dotX39\DocumentWriter.cpp" />
     <ClCompile Include="dotX39\Node.cpp" />
     <ClCompile Include="Entry.cpp" />
-    <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommandHandler.h" />

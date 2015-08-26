@@ -5,6 +5,7 @@ class Globals
 {
 public:
 	bool verbosity;
+	bool exitAfterArgReading;
 	struct
 	{
 		std::string path;
@@ -23,8 +24,8 @@ public:
 		std::string replacement;
 	} basePath;
 
-	const std::string version = std::string("2.0.0-RC1");
-	Globals() : verbosity(false) {}
+	const std::string version = std::string("2.0.0");
+	Globals() : verbosity(false), exitAfterArgReading(true) {}
 
 	static inline Globals& getInstance()
 	{

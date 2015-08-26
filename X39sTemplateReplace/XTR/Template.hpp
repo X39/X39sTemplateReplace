@@ -23,7 +23,7 @@ namespace XTR
 		std::string outputFileName;
 		std::string outputFileExtension;
 		std::string fileData;
-		std::vector<const Ressource&> ressources;
+		std::vector<const Ressource> ressources;
 		struct Keywords {
 			std::vector<TemplateKeyword> templates;
 			std::vector<ReplacementKeyword> replacements;
@@ -32,9 +32,9 @@ namespace XTR
 		Template() {}
 	public:
 
-		static Template& parse(const dotX39::Node& node, const std::vector<Ressource> ressourceList)
+		static Template parse(const dotX39::Node& node, const std::vector<Ressource>& ressourceList)
 		{
-			auto& tmp = Template();
+			auto tmp = Template();
 			tmp.qualifier = node.getName();
 
 #pragma region Argument Parsing
@@ -48,7 +48,7 @@ namespace XTR
 						std::cerr << std::string("the nodes '").append(tmp.qualifier).append("' 'path' argument should be STRING") << std::endl;
 						throw Exceptions::InvalidTypeStructureException();
 					}
-					tmp.filePath = std::string(Globals::getInstance().basePath.ressources).append(static_cast<const dotX39::DataString*>(arg)->getDataAsString());
+					tmp.filePath = std::string(Globals::getInstance().basePath.templates).append(static_cast<const dotX39::DataString*>(arg)->getDataAsString());
 				}
 				else if (arg->getName().compare("fileName") == 0)
 				{
@@ -57,7 +57,7 @@ namespace XTR
 						std::cerr << std::string("the nodes '").append(tmp.qualifier).append("' 'fileName' argument should be STRING") << std::endl;
 						throw Exceptions::InvalidTypeStructureException();
 					}
-					tmp.outputFileName = std::string(Globals::getInstance().basePath.ressources).append(static_cast<const dotX39::DataString*>(arg)->getDataAsString());
+					tmp.outputFileName = std::string(static_cast<const dotX39::DataString*>(arg)->getDataAsString());
 				}
 				else if (arg->getName().compare("fileExtension") == 0)
 				{
@@ -66,22 +66,33 @@ namespace XTR
 						std::cerr << std::string("the nodes '").append(tmp.qualifier).append("' 'fileExtension' argument should be STRING") << std::endl;
 						throw Exceptions::InvalidTypeStructureException();
 					}
-					tmp.outputFileExtension = std::string(Globals::getInstance().basePath.ressources).append(static_cast<const dotX39::DataString*>(arg)->getDataAsString());
+					tmp.outputFileExtension = std::string(static_cast<const dotX39::DataString*>(arg)->getDataAsString());
 				}
-				else if (arg->getName().compare("ressources") == 0)
+				else 
 				{
-					if (arg->getType() != dotX39::DataTypes::ARRAY)
+					if (Globals::getInstance().verbosity)
+						std::cout << std::string("the node '").append(tmp.qualifier).append("' contains the unknown argument '").append(arg->getName()).append("', ignored.") << std::endl;
+				}
+			}
+#pragma endregion
+#pragma region Data Parsing
+			for (int i = 0; i < node.getDataCount(); i++)
+			{
+				const dotX39::Data* data = node.getData(i);
+				if (data->getName().compare("ressources") == 0)
+				{
+					if (data->getType() != dotX39::DataTypes::ARRAY)
 					{
 						std::cerr << std::string("the nodes '").append(tmp.qualifier).append("' 'ressources' argument should be ARRAY") << std::endl;
 						throw Exceptions::InvalidTypeStructureException();
 					}
-					auto tmpDataArray = static_cast<const dotX39::DataArray*>(arg);
+					auto tmpDataArray = static_cast<const dotX39::DataArray*>(data);
 					//We want to validate ALL ressources here so lets create an error counter instead of throwing an exception instantly
 					size_t errCount = 0;
 					for (int j = 0; j < tmpDataArray->getDataCount(); j++)
 					{
 						auto data = tmpDataArray->getDataElement(j);
-						if (arg->getType() != dotX39::DataTypes::STRING)
+						if (data->getType() != dotX39::DataTypes::STRING)
 						{
 							std::cerr << std::string("the nodes '").append(tmp.qualifier).append("' 'ressource' argument should be ARRAY with just STRINGs") << std::endl;
 							throw Exceptions::InvalidTypeStructureException();
@@ -108,10 +119,10 @@ namespace XTR
 					if (errCount > 0)
 						throw std::invalid_argument("Some Ressources are not existing for a Template");
 				}
-				else
+				else 
 				{
 					if (Globals::getInstance().verbosity)
-						std::cout << std::string("the node '").append(tmp.qualifier).append("' contains the unknown argument '").append(arg->getName()).append("', ignored.") << std::endl;
+						std::cout << std::string("the node '").append(tmp.qualifier).append("' contains the unknown argument '").append(data->getName()).append("', ignored.") << std::endl;
 				}
 			}
 #pragma endregion
@@ -129,7 +140,8 @@ namespace XTR
 							std::cerr << std::string("the nodes '").append(tmp.qualifier).append("' subnodes '").append(subnode->getName()).append("' data datatypes should be STRING") << std::endl;
 							throw Exceptions::InvalidTypeStructureException();
 						}
-						tmp.keywords.templates.push_back(TemplateKeyword::parse(*static_cast<const dotX39::DataString*>(data)));
+						auto templateKeyword = TemplateKeyword::parse(*static_cast<const dotX39::DataString*>(data));
+						tmp.keywords.templates.push_back(templateKeyword);
 					}
 				}
 				else if (subnode->getName().compare("replacementKeywords") == 0)
@@ -158,10 +170,10 @@ namespace XTR
 				std::cerr << std::string("the node '").append(tmp.getQualifier()).append("' has no path argument provided") << std::endl;
 				exit(-1);
 			}
-			std::ifstream stream = std::ifstream(std::string(Globals::getInstance().basePath.templates).append(tmp.filePath).c_str());
+			std::ifstream stream = std::ifstream(std::string(tmp.filePath).c_str());
 			if (!stream.is_open() || !stream.good())
 			{
-				auto errMsg = std::string("Could not read file: ").append(std::string(Globals::getInstance().basePath.templates).append(tmp.filePath));
+				auto errMsg = std::string("Could not read file: ").append(tmp.filePath);
 				std::cerr << errMsg << std::endl;
 				throw std::runtime_error(errMsg);
 			}
@@ -188,7 +200,7 @@ namespace XTR
 		const std::string& getOutputFileName() const { return outputFileName; }
 		const std::string& getFileData() const { return fileData; }
 		const std::string& getOutputFileExtension() const { return outputFileExtension; }
-		const std::vector<const Ressource&>& getRessources() const { return ressources; }
+		const std::vector<const Ressource>& getRessources() const { return ressources; }
 		const Keywords& getKeywords() const { return keywords; }
 	};
 }

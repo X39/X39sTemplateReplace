@@ -67,7 +67,8 @@ void CommandHandler::executeCommand(const COMMAND& cmd, const char* str) const
 			{
 				argumentCount++;
 				argument[curArgLength - 1] = (char)0x00;
-				args.push_back(std::string(argument));
+				if (argumentCount != 1)
+					args.push_back(std::string(argument));
 				curArgLength = 0;
 			}
 		}

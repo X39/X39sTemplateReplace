@@ -14,7 +14,7 @@ namespace XTR
 		std::string replacement;
 		ReplacementKeyword() {}
 	public:
-		static ReplacementKeyword& parse(const dotX39::DataArray& data)
+		static ReplacementKeyword parse(const dotX39::DataArray& data)
 		{
 			auto& tmp = ReplacementKeyword();
 			tmp.qualifier = data.getName();
@@ -24,8 +24,8 @@ namespace XTR
 			tmp.replacement = static_cast<const dotX39::DataString*>(data.getDataElement(1))->getDataAsString();
 			return tmp;
 		}
-		const std::string& getQualifier() { return qualifier; }
-		const std::string& getAppeariance() { return appeariance; }
-		const std::string& getReplacement() { return replacement; }
+		const std::string& getQualifier() const { return qualifier; }
+		const std::string& getAppeariance() const { return appeariance; }
+		const std::string& getReplacement() const { return replacement; }
 	};
 }

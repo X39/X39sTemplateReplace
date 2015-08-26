@@ -16,7 +16,7 @@ namespace XTR
 		std::string outputFileName;
 		Ressource() {}
 	public:
-		static Ressource& parse(const dotX39::Node& node)
+		static Ressource parse(const dotX39::Node& node)
 		{
 			auto& tmp = Ressource();
 			tmp.qualifier = node.getName();
@@ -30,7 +30,7 @@ namespace XTR
 						std::cerr << std::string("the nodes '").append(tmp.qualifier).append("' path argument should be STRING") << std::endl;
 						throw Exceptions::InvalidTypeStructureException();
 					}
-					tmp.filePath = std::string(Globals::getInstance().basePath.tmps).append(static_cast<const dotX39::DataString*>(arg)->getDataAsString());
+					tmp.filePath = std::string(Globals::getInstance().basePath.ressources).append(static_cast<const dotX39::DataString*>(arg)->getDataAsString());
 				}
 				else if (arg->getName().compare("outname") == 0)
 				{
