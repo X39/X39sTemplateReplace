@@ -24,7 +24,7 @@ public:
 		std::string replacement;
 	} basePath;
 
-	const std::string version = std::string("2.0.0");
+	const std::string version = std::string("2.0.1");
 	Globals() : verbosity(false), exitAfterArgReading(true) {}
 
 	static inline Globals& getInstance()

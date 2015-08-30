@@ -136,7 +136,7 @@ void writeFile(XTR::Replacement r)
 		for (auto& tk : r.getTemplateKeywords())
 		{
 			std::string str = tk.getText();
-			bool flag = false;
+			//bool flag = false;
 			for (auto& rk : it.getKeywords().replacements)
 			{
 				int findResult = str.find(rk.getAppeariance());
@@ -148,13 +148,12 @@ void writeFile(XTR::Replacement r)
 						str = std::string(str.substr(0, findResult)).append(rk.getReplacement()).append(str.substr(findResult + rk.getAppeariance().length()));
 						findResult = str.find(rk.getAppeariance());
 					}
-					flag = true;
+					//flag = true;
 				}
-				if (!flag && Globals::getInstance().verbosity)
-					std::cout << "The ReplacementKeyword '" << tk.getQualifier() << "' is unused for " << r.getQualifier() << std::endl;
 			}
-			if (flag)
-				templateKeywords.push_back(XTR::TemplateKeyword(tk.getQualifier(), str));
+			templateKeywords.push_back(XTR::TemplateKeyword(tk.getQualifier(), str));
+			//else if (Globals::getInstance().verbosity)
+			//	std::cout << "The Keyword '" << tk.getQualifier() << "' uses no replacement keywords" << std::endl;
 		}
 		std::string fileName = std::string(it.getOutputFileName()).append(".").append(it.getOutputFileExtension());
 		if (Globals::getInstance().verbosity)
